@@ -3,25 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <title>Solicitações</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 
-<h2>Criar Solicitação</h2>
+<h2>Nova Solicitação</h2>
 
-<input id="nome" placeholder="Nome"><br><br>
-<input id="email" placeholder="Email"><br><br>
+<form id="form">
+  <textarea id="descricao" placeholder="Descrição" required></textarea><br><br>
 
-<select id="prioridade">
-  <option value="Baixa">Baixa</option>
-  <option value="Média">Média</option>
-  <option value="Alta">Alta</option>
-</select><br><br>
+  <select id="prioridade">
+    <option>Baixa</option>
+    <option>Média</option>
+    <option>Alta</option>
+  </select><br><br>
 
-<textarea id="descricao" placeholder="Descrição"></textarea><br><br>
+  <input type="file" id="imagens" multiple accept="image/*"><br><br>
 
-<button onclick="criarSolicitacao()">Criar Solicitação</button>
+  <button type="submit">Enviar</button>
+</form>
 
-<p id="msg"></p>
+<hr>
+
+<h2>Solicitações Registradas</h2>
+<ul id="lista"></ul>
 
 <script src="script.js"></script>
 </body>
