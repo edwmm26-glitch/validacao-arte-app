@@ -1,8 +1,8 @@
 const IMGBB_API_KEY = '253ceec16b75eac72edeeb76a5a7fd48'; // Sua API Key do ImgBB
 
 const USUARIOS = {
-  'comunicacao': { senha: 'Com@2025Seguro!', role: 'Comunicacao', nome: 'Equipe Comunicação' },
-  'juridico':     { senha: 'Jur@2025Seguro!', role: 'Juridico',     nome: 'Equipe Jurídico'     }
+  'comunicacao': { senha: 'Com123', role: 'Comunicacao', nome: 'Equipe Comunicação' },
+  'juridico':     { senha: 'Jur456', role: 'Juridico',     nome: 'Equipe Jurídico'     }
 };
 
 let currentId = null; // Para justificativa
@@ -234,3 +234,4 @@ function showErrorToast(msg) {
   document.getElementById('toastError').querySelector('.toast-body').textContent = msg;
   toast.show();
 }
+
