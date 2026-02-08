@@ -1,131 +1,101 @@
-/************* CONFIG *************/
-const API_URL = "https://script.google.com/macros/s/AKfycbzrbK0RJMBy9qzA5V1HaY37dRkL7PJLUEJ9Tp8HeGNN8cvzsTMDQH-2elg5ECIgv4iTxg/exec";
-const IMGBB_API_KEY = "253ceec16b75eac72edeeb76a5a7fd48";
+const API_URL = "SUA_URL_DO_APPS_SCRIPT";
+const IMGBB_API_KEY = "SUA_CHAVE_IMGBB";
 
-/************* USUÁRIOS *************/
 const USUARIOS = {
-  comunicacao: { senha: "Com123", role: "COM", nome: "Equipe Comunicação" },
-  juridico: { senha: "Jur456", role: "JUR", nome: "Equipe Jurídico" }
+  comunicacao: { senha: "Com123", nome: "Comunicação" },
+  juridico: { senha: "Jur456", nome: "Jurídico" }
 };
 
-let ROLE = null;
-let NOME = null;
-let CURRENT_ID = null;
+let NOME = "";
 
-/************* INIT *************/
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("loginForm").addEventListener("submit", login);
-  document.getElementById("createForm").addEventListener("submit", criarSolicitacao);
-  document.getElementById("btnReprovar").addEventListener("click", confirmarReprovacao);
-});
-
-/************* LOGIN *************/
-function login(e) {
+document.getElementById("loginForm").onsubmit = e => {
   e.preventDefault();
+  const u = loginInput.value.toLowerCase();
+  const s = senhaInput.value;
 
-  const usuario = loginInput.value.trim().toLowerCase();
-  const senha = senhaInput.value.trim();
-
-  if (!USUARIOS[usuario] || USUARIOS[usuario].senha !== senha) {
-    loginError.textContent = "Login ou senha inválidos";
+  if (!USUARIOS[u] || USUARIOS[u].senha !== s) {
+    loginError.textContent = "Login inválido";
     loginError.classList.remove("d-none");
     return;
   }
 
-  ROLE = USUARIOS[usuario].role;
-  NOME = USUARIOS[usuario].nome;
-
+  NOME = USUARIOS[u].nome;
   loginPage.classList.add("d-none");
   mainPage.classList.remove("d-none");
+  carregar();
+};
 
-  renderizarTela();
-  carregarSolicitacoes();
+async function carregar() {
+  const r = await fetch(API_URL);
+  const dados = await r.json();
+
+  let html = `<table class="table">
+    <tr><th>Descrição</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr>`;
+
+  dados.forEach(d => {
+    html += `
+      <tr>
+        <td>${d.Descrição}</td>
+        <td>${d.Prioridade}</td>
+        <td>${d.Status}</td>
+        <td>
+          <button class="btn btn-sm btn-info"
+            onclick="verMidias('${d.Midias || ""}')">Mídias</button>
+        </td>
+      </tr>`;
+  });
+
+  html += "</table>";
+  tableArea.innerHTML = html;
+}
+
+createForm.onsubmit = async e => {
+  e.preventDefault();
+
+  let midias = [];
+
+  for (let f of imagens.files) midias.push(await upload(f));
+  if (video.files[0]) midias.push(await upload(video.files[0]));
+
+  const fd = new FormData();
+  fd.append("action", "create");
+  fd.append("data", JSON.stringify({
+    descricao: descricao.value,
+    prioridade: prioridade.value,
+    nome: NOME,
+    midias: midias.join(",")
+  }));
+
+  await fetch(API_URL, { method: "POST", body: fd });
+  bootstrap.Modal.getInstance(createModal).hide();
+  createForm.reset();
+  carregar();
+};
+
+async function upload(file) {
+  const fd = new FormData();
+  fd.append("key", IMGBB_API_KEY);
+  fd.append("image", file);
+  const r = await fetch("https://api.imgbb.com/1/upload", { method:"POST", body:fd });
+  return (await r.json()).data.url;
+}
+
+function verMidias(str) {
+  gallery.innerHTML = "";
+  videoPlayer.classList.add("d-none");
+
+  str.split(",").forEach(u => {
+    if (u.includes(".mp4")) {
+      videoPlayer.src = u;
+      videoPlayer.classList.remove("d-none");
+    } else {
+      gallery.innerHTML += `<div class="col-md-4"><img src="${u}" class="img-fluid"></div>`;
+    }
+  });
+
+  new bootstrap.Modal(mediaModal).show();
 }
 
 function logout() {
   location.reload();
 }
-
-/************* UI *************/
-function renderizarTela() {
-  let html = "";
-
-  if (ROLE === "COM") {
-    html += `
-      <button class="btn btn-success mb-4" data-bs-toggle="modal" data-bs-target="#createModal">
-        + Nova Solicitação
-      </button>`;
-  }
-
-  html += `
-    <div id="tableArea" class="card p-3 shadow-sm">
-      <div class="text-center py-5">
-        <div class="spinner-border"></div>
-        <p class="mt-2">Carregando solicitações...</p>
-      </div>
-    </div>`;
-
-  content.innerHTML = html;
-}
-
-/************* LISTAR *************/
-async function carregarSolicitacoes() {
-  const res = await fetch(API_URL);
-  const dados = await res.json();
-
-  let html = `
-    <table class="table table-striped align-middle">
-      <thead>
-        <tr>
-          <th>Descrição</th>
-          <th>Prioridade</th>
-          <th>Status</th>
-          <th>Solicitante</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>`;
-
-  dados.forEach(r => {
-    if (ROLE === "JUR" && r.Status !== "Pendente") return;
-
-    html += `
-      <tr>
-        <td>${r["Descrição"]}</td>
-        <td>${r.Prioridade}</td>
-        <td>
-          <span class="badge ${
-            r.Status === "Pendente" ? "bg-warning" :
-            r.Status === "Aprovado" ? "bg-success" : "bg-danger"
-          }">${r.Status}</span>
-        </td>
-        <td>${r["Solicitante Nome"]}</td>
-        <td>
-          <button class="btn btn-sm btn-outline-info me-1"
-            onclick="verMidias('${r.Midias || ""}')">Mídias</button>
-
-          ${
-            ROLE === "JUR" && r.Status === "Pendente" ? `
-              <button class="btn btn-sm btn-success me-1"
-                onclick="aprovar('${r.ID}')">Aprovar</button>
-              <button class="btn btn-sm btn-danger"
-                onclick="mostrarJustificativa('${r.ID}')">Reprovar</button>
-            ` : ""
-          }
-        </td>
-      </tr>`;
-  });
-
-  html += "</tbody></table>";
-  document.getElementById("tableArea").innerHTML = html;
-}
-
-/************* CRIAR *************/
-async function criarSolicitacao(e) {
-  e.preventDefault();
-
-  const descricao = descricao.value.trim();
-  const prioridade = prioridade.value;
-  const imagens = document.getElementById("imagens").files;
-
-  if (!descricao) return
