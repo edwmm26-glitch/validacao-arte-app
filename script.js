@@ -1,148 +1,131 @@
 /************* CONFIG *************/
 const API_URL = "https://script.google.com/macros/s/AKfycbzrbK0RJMBy9qzA5V1HaY37dRkL7PJLUEJ9Tp8HeGNN8cvzsTMDQH-2elg5ECIgv4iTxg/exec";
+const IMGBB_API_KEY = "253ceec16b75eac72edeeb76a5a7fd48";
 
 /************* USUÁRIOS *************/
 const USUARIOS = {
-  comunicacao: {
-    senha: "Com123",
-    role: "COM",
-    nome: "Equipe Comunicação"
-  },
-  juridico: {
-    senha: "Jur456",
-    role: "JUR",
-    nome: "Equipe Jurídico"
-  }
+  comunicacao: { senha: "Com123", role: "COM", nome: "Equipe Comunicação" },
+  juridico: { senha: "Jur456", role: "JUR", nome: "Equipe Jurídico" }
 };
 
 let ROLE = null;
 let NOME = null;
+let CURRENT_ID = null;
+
+/************* INIT *************/
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("loginForm").addEventListener("submit", login);
+  document.getElementById("createForm").addEventListener("submit", criarSolicitacao);
+  document.getElementById("btnReprovar").addEventListener("click", confirmarReprovacao);
+});
 
 /************* LOGIN *************/
-(function loginInicial() {
-  const usuario = prompt("Usuário (comunicacao ou juridico):");
-  const senha = prompt("Senha:");
+function login(e) {
+  e.preventDefault();
 
-  if (
-    !usuario ||
-    !senha ||
-    !USUARIOS[usuario] ||
-    USUARIOS[usuario].senha !== senha
-  ) {
-    alert("Login inválido");
-    location.reload();
+  const usuario = loginInput.value.trim().toLowerCase();
+  const senha = senhaInput.value.trim();
+
+  if (!USUARIOS[usuario] || USUARIOS[usuario].senha !== senha) {
+    loginError.textContent = "Login ou senha inválidos";
+    loginError.classList.remove("d-none");
     return;
   }
 
   ROLE = USUARIOS[usuario].role;
   NOME = USUARIOS[usuario].nome;
 
-  if (ROLE === "JUR") {
-    document.querySelector("form").style.display = "none";
-  }
+  loginPage.classList.add("d-none");
+  mainPage.classList.remove("d-none");
 
+  renderizarTela();
   carregarSolicitacoes();
-})();
+}
 
-/************* CRIAR SOLICITAÇÃO *************/
-document.getElementById("form").addEventListener("submit", async e => {
-  e.preventDefault();
+function logout() {
+  location.reload();
+}
 
-  if (ROLE !== "COM") {
-    alert("Apenas Comunicação pode criar solicitações");
-    return;
+/************* UI *************/
+function renderizarTela() {
+  let html = "";
+
+  if (ROLE === "COM") {
+    html += `
+      <button class="btn btn-success mb-4" data-bs-toggle="modal" data-bs-target="#createModal">
+        + Nova Solicitação
+      </button>`;
   }
 
-  const descricao = document.getElementById("descricao").value.trim();
-  const prioridade = document.getElementById("prioridade").value;
+  html += `
+    <div id="tableArea" class="card p-3 shadow-sm">
+      <div class="text-center py-5">
+        <div class="spinner-border"></div>
+        <p class="mt-2">Carregando solicitações...</p>
+      </div>
+    </div>`;
 
-  if (!descricao) {
-    alert("Descrição obrigatória");
-    return;
-  }
-
-  const fd = new FormData();
-  fd.append("action", "create");
-  fd.append(
-    "data",
-    JSON.stringify({
-      descricao,
-      prioridade,
-      nome: NOME,
-      email: "interno@prefeitura",
-      midias: ""
-    })
-  );
-
-  const res = await fetch(API_URL, { method: "POST", body: fd });
-  const json = await res.json();
-
-  if (!json.success) {
-    alert("Erro ao salvar");
-    return;
-  }
-
-  document.getElementById("form").reset();
-  carregarSolicitacoes();
-});
+  content.innerHTML = html;
+}
 
 /************* LISTAR *************/
 async function carregarSolicitacoes() {
   const res = await fetch(API_URL);
   const dados = await res.json();
 
-  const lista = document.getElementById("lista");
-  lista.innerHTML = "";
+  let html = `
+    <table class="table table-striped align-middle">
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th>Prioridade</th>
+          <th>Status</th>
+          <th>Solicitante</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>`;
 
   dados.forEach(r => {
     if (ROLE === "JUR" && r.Status !== "Pendente") return;
 
-    const li = document.createElement("li");
-    li.style.marginBottom = "10px";
+    html += `
+      <tr>
+        <td>${r["Descrição"]}</td>
+        <td>${r.Prioridade}</td>
+        <td>
+          <span class="badge ${
+            r.Status === "Pendente" ? "bg-warning" :
+            r.Status === "Aprovado" ? "bg-success" : "bg-danger"
+          }">${r.Status}</span>
+        </td>
+        <td>${r["Solicitante Nome"]}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-info me-1"
+            onclick="verMidias('${r.Midias || ""}')">Mídias</button>
 
-    li.innerHTML = `
-      <strong>${r["Descrição"]}</strong><br>
-      Prioridade: ${r.Prioridade}<br>
-      Status: <b>${r.Status}</b><br>
-      Solicitante: ${r["Solicitante Nome"]}<br>
-    `;
-
-    if (ROLE === "JUR" && r.Status === "Pendente") {
-      const btnAprovar = document.createElement("button");
-      btnAprovar.textContent = "Aprovar";
-      btnAprovar.onclick = () => atualizarStatus(r.ID, "Aprovado", "");
-
-      const btnReprovar = document.createElement("button");
-      btnReprovar.textContent = "Reprovar";
-      btnReprovar.style.marginLeft = "5px";
-      btnReprovar.onclick = () => {
-        const j = prompt("Justificativa:");
-        if (j) atualizarStatus(r.ID, "Reprovado", j);
-      };
-
-      li.appendChild(document.createElement("br"));
-      li.appendChild(btnAprovar);
-      li.appendChild(btnReprovar);
-    }
-
-    lista.appendChild(li);
+          ${
+            ROLE === "JUR" && r.Status === "Pendente" ? `
+              <button class="btn btn-sm btn-success me-1"
+                onclick="aprovar('${r.ID}')">Aprovar</button>
+              <button class="btn btn-sm btn-danger"
+                onclick="mostrarJustificativa('${r.ID}')">Reprovar</button>
+            ` : ""
+          }
+        </td>
+      </tr>`;
   });
+
+  html += "</tbody></table>";
+  document.getElementById("tableArea").innerHTML = html;
 }
 
-/************* ATUALIZAR STATUS *************/
-async function atualizarStatus(id, status, justificativa) {
-  const fd = new FormData();
-  fd.append("action", "update");
-  fd.append(
-    "data",
-    JSON.stringify({
-      id,
-      status,
-      avaliadoPor: NOME,
-      justificativa
-    })
-  );
+/************* CRIAR *************/
+async function criarSolicitacao(e) {
+  e.preventDefault();
 
-  await fetch(API_URL, { method: "POST", body: fd });
-  carregarSolicitacoes();
-}
+  const descricao = descricao.value.trim();
+  const prioridade = prioridade.value;
+  const imagens = document.getElementById("imagens").files;
+
+  if (!descricao) return
