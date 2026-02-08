@@ -2,32 +2,139 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Solicitações</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validação de Arte</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Tela de Login -->
+  <div id="loginPage" class="vh-100 d-flex align-items-center justify-content-center bg-gradient-primary">
+    <div class="card p-4 shadow-lg" style="width: 400px;">
+      <div class="text-center mb-4">
+        <img src="https://via.placeholder.com/200x80?text=Logo" alt="Logo" class="img-fluid mb-3">
+        <h4>Validação de Arte</h4>
+      </div>
+      <form id="loginForm">
+        <div class="mb-3">
+          <label class="form-label">Login</label>
+          <input type="text" class="form-control" id="loginInput" required placeholder="comunicacao ou juridico">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Senha</label>
+          <input type="password" class="form-control" id="senhaInput" required placeholder="********">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Entrar</button>
+      </form>
+      <p id="loginError" class="text-danger text-center mt-3 d-none"></p>
+    </div>
+  </div>
 
-<h2>Nova Solicitação</h2>
+  <!-- Dashboard -->
+  <div id="mainPage" class="d-none">
+    <div class="d-flex">
+      <nav class="sidebar bg-dark text-white p-3 vh-100 position-fixed" style="width: 250px;">
+        <h5 class="text-center mb-4">Menu</h5>
+        <ul class="list-unstyled">
+          <li class="mb-3"><a href="#" class="text-white d-block">Dashboard</a></li>
+          <li class="mb-3"><a href="#" class="text-white d-block">Solicitações</a></li>
+          <li class="mb-3"><a href="#" onclick="logout()" class="text-danger d-block">Sair</a></li>
+        </ul>
+      </nav>
+      <main class="flex-grow-1 p-4" style="margin-left: 250px;">
+        <h2 class="mb-4">Solicitações</h2>
+        <div id="content"></div>
+      </main>
+    </div>
+  </div>
 
-<form id="form">
-  <textarea id="descricao" placeholder="Descrição" required></textarea><br><br>
+  <!-- Modal Nova Solicitação -->
+  <div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Nova Solicitação</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="createForm">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Descrição</label>
+              <textarea class="form-control" id="descricao" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Prioridade</label>
+              <select class="form-select" id="prioridade" required>
+                <option value="Baixa">Baixa</option>
+                <option value="Média">Média</option>
+                <option value="Alta">Alta</option>
+                <option value="Crítica">Crítica</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Imagens (máx 6)</label>
+              <input type="file" class="form-control" id="imagens" accept="image/*" multiple>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Vídeo (máx 1)</label>
+              <input type="file" class="form-control" id="video" accept="video/*">
+            </div>
+            <button type="submit" class="btn btn-primary w-100 btn-lg">Criar Solicitação</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <select id="prioridade">
-    <option>Baixa</option>
-    <option>Média</option>
-    <option>Alta</option>
-  </select><br><br>
+  <!-- Modal Justificativa -->
+  <div class="modal fade" id="justifyModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Justificativa de Reprovação</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <textarea class="form-control" id="justificativa" rows="4" required placeholder="Motivo da reprovação..."></textarea>
+          <button class="btn btn-danger w-100 mt-3 btn-lg" id="btnReprovar">Confirmar Reprovação</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <input type="file" id="imagens" multiple accept="image/*"><br><br>
+  <!-- Modal Mídia -->
+  <div class="modal fade" id="mediaModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title">Mídias da Solicitação</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3" id="gallery"></div>
+          <video id="videoPlayer" controls class="w-100 mt-4 rounded shadow" style="display:none;"></video>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <button type="submit">Enviar</button>
-</form>
+  <!-- Toast -->
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="toastSuccess" class="toast bg-success text-white" role="alert">
+      <div class="d-flex">
+        <div class="toast-body"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+    <div id="toastError" class="toast bg-danger text-white" role="alert">
+      <div class="d-flex">
+        <div class="toast-body"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
 
-<hr>
-
-<h2>Solicitações Registradas</h2>
-<ul id="lista"></ul>
-
-<script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
