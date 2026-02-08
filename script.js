@@ -1,5 +1,5 @@
-const API_URL = "SUA_URL_DO_APPS_SCRIPT";
-const IMGBB_API_KEY = "SUA_CHAVE_IMGBB";
+const API_URL = "https://script.google.com/macros/s/AKfycbzqKPGVkMtRWyChtI4jB_0kt1IKn-wOUPoN_eHXTYQwQ1rvrtmqrsuvGtaxEtl7RTHuGQ/exec";
+const IMGBB_API_KEY = "253ceec16b75eac72edeeb76a5a7fd48";
 
 const USUARIOS = {
   comunicacao: { senha: "Com123", nome: "Comunicação" },
@@ -99,3 +99,4 @@ function verMidias(str) {
 function logout() {
   location.reload();
 }
+
