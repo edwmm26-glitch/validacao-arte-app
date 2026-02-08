@@ -1,10 +1,10 @@
 const SHEET_ID = '1mv2lrB_C5YF9bKeVjW1QKhxD7y-6jSZkPgQmKiuMIXA'; // ID da sua planilha
-const API_KEY = 'AIzaSyAbtKINtBgTDdhnM3BemIFsiVAyxG6MfJs'; // Sua chave API do Google Sheets
-const IMGBB_API_KEY = '253ceec16b75eac72edeeb76a5a7fd48'; // Sua chave ImgBB (já está correta)
+const API_KEY = 'AIzaSyAbtKINtBgTDdhnM3BemIFsiVAyxG6MfJs'; // Sua chave Google Sheets API
+const IMGBB_API_KEY = '253ceec16b75eac72edeeb76a5a7fd48'; // Sua chave ImgBB
 
 const USUARIOS = {
   'comunicacao': { senha: 'Com123', role: 'Comunicacao', nome: 'Equipe Comunicação' },
-  'juridico':     { senha: 'Jur456', role: 'Juridico',     nome: 'Equipe Jurídico'     }
+  'juridico': { senha: 'Jur456', role: 'Juridico', nome: 'Equipe Jurídico' }
 };
 
 let currentId = null; // Para justificativa
@@ -39,10 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Form de criação de solicitação
+  // Form de criação
   document.getElementById('createForm')?.addEventListener('submit', createSolicitacao);
 
-  // Botão de reprovação
+  // Botão reprovar
   document.getElementById('btnReprovar')?.addEventListener('click', confirmarReprovacao);
 });
 
@@ -67,8 +67,9 @@ function renderContent() {
 
 async function loadRequests() {
   try {
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Solicitacoes!A:K?key=${API_KEY}`);
-    if (!response.ok) throw new Error('Erro ao carregar dados');
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Solicitacoes!A:K?key=${API_KEY}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Erro ao carregar dados da planilha');
     const data = await response.json();
     const rows = data.values?.slice(1) || [];
     let html = '<table class="table table-striped table-hover"><thead><tr><th>ID</th><th>Descrição</th><th>Prioridade</th><th>Status</th><th>Solicitante</th><th>Criação</th><th>Ações</th></tr></thead><tbody>';
@@ -188,13 +189,13 @@ async function uploadToImgBB(file) {
   }
 }
 
-// Aprovar (atualização simples - pode melhorar depois)
+// Aprovar (simples por agora)
 function aprovar(id) {
   showSuccessToast(`Aprovado ID ${id}`);
-  loadRequests(); // recarrega lista
+  loadRequests();
 }
 
-// Reprovar com justificativa
+// Reprovar
 function mostrarJustificativa(id) {
   currentId = id;
   new bootstrap.Modal(document.getElementById('justifyModal')).show();
@@ -208,7 +209,7 @@ function confirmarReprovacao() {
   loadRequests();
 }
 
-// Ver Mídia (galeria com imagens e vídeo)
+// Ver Mídia
 function verMidia(mediaString) {
   if (!mediaString) return showErrorToast('Nenhuma mídia associada');
   const urls = mediaString.split(',');
@@ -236,5 +237,3 @@ function showErrorToast(msg) {
   document.getElementById('toastError').querySelector('.toast-body').textContent = msg;
   toast.show();
 }
-
-
