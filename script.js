@@ -1,6 +1,6 @@
 /************* CONFIG *************/
 const API_URL = "https://script.google.com/macros/s/AKfycbzrbK0RJMBy9qzA5V1HaY37dRkL7PJLUEJ9Tp8HeGNN8cvzsTMDQH-2elg5ECIgv4iTxg/exec";
-const IMGBB_API_KEY = "SUA_CHAVE_IMGBB";
+const IMGBB_API_KEY = "253ceec16b75eac72edeeb76a5a7fd48";
 
 /************* USUÁRIOS *************/
 const USUARIOS = {
@@ -244,3 +244,4 @@ async function uploadImgBB(file) {
   const json = await res.json();
   return json?.data?.url || null;
 }
+
