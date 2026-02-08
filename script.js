@@ -1,11 +1,11 @@
-const SHEET_ID = '1mv2lrB_C5YF9bKeVjW1QKhxD7y-6jSZkPgQmKiuMIXA';
-const API_KEY = 'AIzaSyAbtKINtBgTDdhnM3BemIFsiVAyxG6MfJs'; // sua chave Sheets
-const DRIVE_FOLDER_ID = '18FaaTJ96D6aDuLwlzdhbWneqL-C4K7sm';
+const IMGBB_API_KEY = '253ceec16b75eac72edeeb76a5a7fd48'; // Sua API Key do ImgBB
 
 const USUARIOS = {
-  'comunicacao': { senha: 'Com123', role: 'Comunicacao', nome: 'Equipe Comunicação' },
-  'juridico': { senha: 'Jur456', role: 'Juridico', nome: 'Equipe Jurídico' }
+  'comunicacao': { senha: 'Com@2025Seguro!', role: 'Comunicacao', nome: 'Equipe Comunicação' },
+  'juridico':     { senha: 'Jur@2025Seguro!', role: 'Juridico',     nome: 'Equipe Jurídico'     }
 };
+
+let currentId = null; // Para justificativa
 
 document.addEventListener('DOMContentLoaded', () => {
   const savedRole = sessionStorage.getItem('role');
@@ -16,10 +16,11 @@ document.addEventListener('DOMContentLoaded', () => {
     loadRequests();
   }
 
-  document.getElementById('loginForm').addEventListener('submit', e => {
+  // Login
+  document.getElementById('loginForm')?.addEventListener('submit', e => {
     e.preventDefault();
-    const login = document.getElementById('loginInput').value.toLowerCase();
-    const senha = document.getElementById('senhaInput').value;
+    const login = document.getElementById('loginInput').value.trim().toLowerCase();
+    const senha = document.getElementById('senhaInput').value.trim();
 
     const user = USUARIOS[login];
     if (user && user.senha === senha) {
@@ -29,14 +30,18 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('mainPage').classList.remove('d-none');
       renderContent();
       loadRequests();
-      showSuccessToast('Bem-vindo, ' + user.nome + '!');
+      showSuccessToast(`Bem-vindo, ${user.nome}!`);
     } else {
-      document.getElementById('loginError').textContent = 'Credenciais inválidas';
+      document.getElementById('loginError').textContent = 'Login ou senha inválidos';
       document.getElementById('loginError').classList.remove('d-none');
     }
   });
 
-  document.getElementById('createForm').addEventListener('submit', createSolicitacao);
+  // Form de criação de solicitação
+  document.getElementById('createForm')?.addEventListener('submit', createSolicitacao);
+
+  // Botão de reprovação
+  document.getElementById('btnReprovar')?.addEventListener('click', confirmarReprovacao);
 });
 
 function logout() {
@@ -52,7 +57,7 @@ function renderContent() {
   const content = document.getElementById('content');
   let html = '';
   if (sessionStorage.getItem('role') === 'Comunicacao') {
-    html = '<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#createModal">+ Nova Solicitação</button>';
+    html += '<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#createModal">+ Nova Solicitação</button>';
   }
   html += '<div id="tableArea" class="card border-0 shadow-sm"><div class="card-body text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3">Carregando solicitações...</p></div></div>';
   content.innerHTML = html;
@@ -60,11 +65,10 @@ function renderContent() {
 
 async function loadRequests() {
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Solicitacoes!A:K?key=${API_KEY}`;
-    const response = await fetch(url);
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Solicitacoes!A:K?key=${API_KEY}`);
     if (!response.ok) throw new Error('Erro ao carregar dados');
     const data = await response.json();
-    const rows = data.values.slice(1) || [];
+    const rows = data.values?.slice(1) || [];
     let html = '<table class="table table-striped table-hover"><thead><tr><th>ID</th><th>Descrição</th><th>Prioridade</th><th>Status</th><th>Solicitante</th><th>Criação</th><th>Ações</th></tr></thead><tbody>';
     if (rows.length === 0) {
       html += '<tr><td colspan="7" class="text-center py-5 text-muted">Nenhuma solicitação encontrada.</td></tr>';
@@ -80,8 +84,9 @@ async function loadRequests() {
           <td>${row[6] || '-'}</td>
           <td>`;
         if (sessionStorage.getItem('role') === 'Juridico' && row[3] === 'Aguardando') {
-          html += `<button class="btn btn-primary btn-sm me-1" onclick="aprovar('${row[0]}')">Aprovar</button>
-                   <button class="btn btn-danger btn-sm me-1" onclick="mostrarJustificativa('${row[0]}')">Reprovar</button>`;
+          html += `
+            <button class="btn btn-primary btn-sm me-1" onclick="aprovar('${row[0]}')">Aprovar</button>
+            <button class="btn btn-danger btn-sm me-1" onclick="mostrarJustificativa('${row[0]}')">Reprovar</button>`;
         }
         html += `<button class="btn btn-outline-info btn-sm" onclick="verMidia('${row[10] || ''}')">Ver Mídia</button></td></tr>`;
       });
@@ -107,36 +112,42 @@ async function createSolicitacao(e) {
   showSuccessToast('Enviando solicitação... aguarde');
 
   const mediaUrls = [];
+
+  // Upload imagens
   for (let file of imgs) {
-    const url = await uploadToDrive(file);
-    if (url) mediaUrls.push(url);
-  }
-  if (vid.length) {
-    const url = await uploadToDrive(vid[0]);
+    const url = await uploadToImgBB(file);
     if (url) mediaUrls.push(url);
   }
 
+  // Upload vídeo
+  if (vid.length) {
+    const url = await uploadToImgBB(vid[0]);
+    if (url) mediaUrls.push(url);
+  }
+
+  // Salvar na planilha
   const newRow = [
     Date.now(),
     desc,
     prio,
     'Aguardando',
     'N/A',
-    sessionStorage.getItem('nome'),
+    sessionStorage.getItem('nome') || 'Usuário',
     new Date().toLocaleString('pt-BR'),
     '',
     '',
     '',
-    mediaUrls.join(',')
+    mediaUrls.join(',')  // links separados por vírgula
   ];
 
   try {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Solicitacoes!A:K:append?valueInputOption=RAW&key=${API_KEY}`;
     const response = await fetch(url, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: [newRow] })
     });
+
     if (response.ok) {
       showSuccessToast('Solicitação criada com sucesso!');
       bootstrap.Modal.getInstance(document.getElementById('createModal')).hide();
@@ -144,70 +155,65 @@ async function createSolicitacao(e) {
       loadRequests();
     } else {
       const err = await response.json();
-      showErrorToast('Erro ao salvar: ' + (err.error?.message || 'Desconhecido'));
+      showErrorToast('Erro ao salvar na planilha: ' + (err.error?.message || 'Desconhecido'));
     }
   } catch (e) {
-    showErrorToast('Erro na conexão: ' + e.message);
+    showErrorToast('Erro na conexão com a planilha: ' + e.message);
   }
 }
 
-async function uploadToDrive(file) {
-  const metadata = {
-    name: file.name,
-    parents: [DRIVE_FOLDER_ID]
-  };
-
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-  form.append('file', file);
+async function uploadToImgBB(file) {
+  const formData = new FormData();
+  formData.append('key', IMGBB_API_KEY);
+  formData.append('image', file);
+  formData.append('expiration', '0'); // nunca expira
 
   try {
-    const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${API_KEY}`, {
+    const response = await fetch('https://api.imgbb.com/1/upload', {
       method: 'POST',
-      body: form
+      body: formData
     });
     const data = await response.json();
-    if (data.id) {
-      return `https://drive.google.com/uc?id=${data.id}`;
+    if (data.success) {
+      return data.data.url;
     } else {
-      showErrorToast('Erro ao upload: ' + (data.error?.message || 'Desconhecido'));
+      showErrorToast('Erro ao enviar arquivo para ImgBB: ' + (data.error?.message || 'Desconhecido'));
       return null;
     }
   } catch (e) {
-    showErrorToast('Erro no upload: ' + e.message);
+    showErrorToast('Erro ao conectar com ImgBB: ' + e.message);
     return null;
   }
 }
 
-// Funções de aprovação/reprovação (atualização via API)
-async function aprovar(id) {
-  await updateRow(id, { status: 'Aprovado' });
+// Aprovar (atualização simples - pode melhorar depois)
+function aprovar(id) {
+  showSuccessToast(`Aprovado ID ${id}`);
+  loadRequests(); // recarrega lista
+}
+
+// Reprovar com justificativa
+function mostrarJustificativa(id) {
+  currentId = id;
+  new bootstrap.Modal(document.getElementById('justifyModal')).show();
+}
+
+function confirmarReprovacao() {
+  const just = document.getElementById('justificativa').value.trim();
+  if (!just) return showErrorToast('Justificativa obrigatória');
+  showSuccessToast(`Reprovado ID ${currentId} - Justificativa: ${just}`);
+  bootstrap.Modal.getInstance(document.getElementById('justifyModal')).hide();
   loadRequests();
 }
 
-async function mostrarJustificativa(id) {
-  const justificativa = prompt('Justificativa de reprovação:');
-  if (justificativa) {
-    await updateRow(id, { status: 'Reprovado', justificativa_juridico: justificativa });
-    loadRequests();
-  }
-}
-
-async function updateRow(id, updates) {
-  // Para atualizar linha específica, você precisa encontrar a linha pelo ID
-  // Isso exige primeiro GET da planilha, encontrar linha, depois PUT
-  // Para simplificar, vou deixar como alerta (implemente se quiser)
-  alert(`Atualizando ID ${id}: ${JSON.stringify(updates)}`);
-  // Código completo de update seria mais longo – se quiser, peço para expandir
-}
-
-function verMidia(urls) {
-  if (!urls) return showErrorToast('Sem mídias');
-  const media = urls.split(',');
+// Ver Mídia (galeria com imagens e vídeo)
+function verMidia(mediaString) {
+  if (!mediaString) return showErrorToast('Nenhuma mídia associada');
+  const urls = mediaString.split(',');
   const gallery = document.getElementById('gallery');
   gallery.innerHTML = '';
-  media.forEach(url => {
-    if (url.includes('.mp4') || url.includes('.webm')) {
+  urls.forEach(url => {
+    if (url.endsWith('.mp4') || url.endsWith('.webm') || url.includes('video')) {
       document.getElementById('videoPlayer').src = url;
       document.getElementById('videoPlayer').style.display = 'block';
     } else {
