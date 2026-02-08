@@ -1,4 +1,6 @@
-const IMGBB_API_KEY = '253ceec16b75eac72edeeb76a5a7fd48'; // Sua API Key do ImgBB
+const SHEET_ID = '1mv2lrB_C5YF9bKeVjW1QKhxD7y-6jSZkPgQmKiuMIXA'; // ID da sua planilha
+const API_KEY = 'AIzaSyAbtKINtBgTDdhnM3BemIFsiVAyxG6MfJs'; // Sua chave API do Google Sheets
+const IMGBB_API_KEY = '253ceec16b75eac72edeeb76a5a7fd48'; // Sua chave ImgBB (já está correta)
 
 const USUARIOS = {
   'comunicacao': { senha: 'Com123', role: 'Comunicacao', nome: 'Equipe Comunicação' },
@@ -234,4 +236,5 @@ function showErrorToast(msg) {
   document.getElementById('toastError').querySelector('.toast-body').textContent = msg;
   toast.show();
 }
+
 
