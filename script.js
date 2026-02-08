@@ -1,6 +1,5 @@
 /************* CONFIG *************/
-const SHEET_ID = '1mv2lrB_C5YF9bKeVjW1QKhxD7y-6jSZkPgQmKiuMIXA';
-const API_KEY = 'AIzaSyAbtKINtBgTDdhnM3BemIFsiVAyxG6MfJs';
+const API_URL = 'https://script.google.com/macros/s/AKfycbw2I3Uw_4xplzsnzob2O4_TANJimygLevfO09UhTjMzbljFDbroHLDgzIRSuKRkRFTgfg/exec';
 const IMGBB_API_KEY = '253ceec16b75eac72edeeb76a5a7fd48';
 
 /************* USUÁRIOS *************/
@@ -15,38 +14,35 @@ let currentId = null;
 document.addEventListener('DOMContentLoaded', () => {
   const savedRole = sessionStorage.getItem('role');
   if (savedRole) {
-    document.getElementById('loginPage').classList.add('d-none');
-    document.getElementById('mainPage').classList.remove('d-none');
+    loginPage.classList.add('d-none');
+    mainPage.classList.remove('d-none');
     renderContent();
     loadRequests();
   }
 
-  document.getElementById('loginForm')?.addEventListener('submit', login);
-  document.getElementById('createForm')?.addEventListener('submit', createSolicitacao);
-  document.getElementById('btnReprovar')?.addEventListener('click', confirmarReprovacao);
+  loginForm?.addEventListener('submit', login);
+  createForm?.addEventListener('submit', createSolicitacao);
+  btnReprovar?.addEventListener('click', confirmarReprovacao);
 });
 
 /************* LOGIN *************/
 function login(e) {
   e.preventDefault();
-
-  const login = document.getElementById('loginInput').value.trim().toLowerCase();
-  const senha = document.getElementById('senhaInput').value.trim();
+  const login = loginInput.value.trim().toLowerCase();
+  const senha = senhaInput.value.trim();
   const user = USUARIOS[login];
 
   if (user && user.senha === senha) {
     sessionStorage.setItem('role', user.role);
     sessionStorage.setItem('nome', user.nome);
-
-    document.getElementById('loginPage').classList.add('d-none');
-    document.getElementById('mainPage').classList.remove('d-none');
-
+    loginPage.classList.add('d-none');
+    mainPage.classList.remove('d-none');
     renderContent();
     loadRequests();
     showSuccessToast(`Bem-vindo, ${user.nome}!`);
   } else {
-    document.getElementById('loginError').textContent = 'Login ou senha inválidos';
-    document.getElementById('loginError').classList.remove('d-none');
+    loginError.textContent = 'Login ou senha inválidos';
+    loginError.classList.remove('d-none');
   }
 }
 
@@ -57,7 +53,6 @@ function logout() {
 
 /************* UI *************/
 function renderContent() {
-  const content = document.getElementById('content');
   let html = '';
 
   if (sessionStorage.getItem('role') === 'Comunicacao') {
@@ -81,12 +76,8 @@ function renderContent() {
 /************* LISTAR *************/
 async function loadRequests() {
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Solicitacoes!A:K?key=${API_KEY}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Erro ao ler planilha');
-
-    const data = await res.json();
-    const rows = data.values?.slice(1) || [];
+    const res = await fetch(API_URL);
+    const rows = await res.json();
 
     let html = `
       <table class="table table-striped">
@@ -101,37 +92,28 @@ async function loadRequests() {
       html += `<tr><td colspan="7" class="text-center">Nenhuma solicitação</td></tr>`;
     }
 
-    rows.forEach(row => {
-      const desc = row[1] || '';
-      const curta = desc.length > 60 ? desc.slice(0, 57) + '...' : desc;
-
+    rows.forEach(r => {
       html += `
         <tr>
-          <td>${row[0] || '-'}</td>
-          <td title="${desc}">${curta}</td>
-          <td>${row[2] || '-'}</td>
-          <td>${row[3] || 'Aguardando'}</td>
-          <td>${row[5] || '-'}</td>
-          <td>${row[6] || '-'}</td>
-          <td>`;
-
-      if (sessionStorage.getItem('role') === 'Juridico' && row[3] === 'Aguardando') {
-        html += `
-          <button class="btn btn-sm btn-primary me-1" onclick="aprovar('${row[0]}')">Aprovar</button>
-          <button class="btn btn-sm btn-danger me-1" onclick="mostrarJustificativa('${row[0]}')">Reprovar</button>`;
-      }
-
-      html += `
-          <button class="btn btn-sm btn-outline-info" onclick="verMidia('${row[10] || ''}')">Ver Mídia</button>
+          <td>${r.ID}</td>
+          <td>${r['Descrição']}</td>
+          <td>${r.Prioridade}</td>
+          <td>${r.Status}</td>
+          <td>${r['Solicitante Nome']}</td>
+          <td>${r['Data Criação']}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-info" onclick="verMidia('${r['Pasta Drive'] || ''}')">
+              Ver Mídia
+            </button>
           </td>
         </tr>`;
     });
 
     html += '</tbody></table>';
-    document.getElementById('tableArea').innerHTML = html;
+    tableArea.innerHTML = html;
 
-  } catch (e) {
-    showErrorToast(e.message);
+  } catch {
+    showErrorToast('Erro ao carregar dados');
   }
 }
 
@@ -141,44 +123,40 @@ async function createSolicitacao(e) {
 
   const desc = descricao.value.trim();
   const prio = prioridade.value;
-  const imgs = imagens.files;
-  const vid = video.files;
 
   if (!desc) return showErrorToast('Descrição obrigatória');
 
   const media = [];
 
-  for (const f of imgs) {
+  for (const f of imagens.files) {
     const url = await uploadToImgBB(f);
     if (url) media.push(url);
   }
 
-  if (vid.length) {
-    const url = await uploadToImgBB(vid[0]);
+  if (video.files.length) {
+    const url = await uploadToImgBB(video.files[0]);
     if (url) media.push(url);
   }
 
-  const row = [
-    Date.now(),
-    desc,
-    prio,
-    'Aguardando',
-    '',
-    sessionStorage.getItem('nome'),
-    new Date().toLocaleString('pt-BR'),
-    '',
-    '',
-    '',
-    media.join(',')
-  ];
+  const payload = {
+    descricao: desc,
+    prioridade: prio,
+    email: 'comunicacao@interno',
+    nome: sessionStorage.getItem('nome'),
+    pastaDrive: media.join(',')
+  };
 
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Solicitacoes!A:K:append?valueInputOption=RAW&key=${API_KEY}`;
-
-  await fetch(url, {
+  const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ values: [row] })
+    body: JSON.stringify(payload)
   });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    return showErrorToast('Erro ao salvar');
+  }
 
   bootstrap.Modal.getInstance(createModal).hide();
   createForm.reset();
@@ -199,37 +177,6 @@ async function uploadToImgBB(file) {
 
   const data = await res.json();
   return data?.data?.url || null;
-}
-
-/************* AÇÕES *************/
-function aprovar(id) {
-  showSuccessToast(`Aprovado ID ${id}`);
-}
-
-function mostrarJustificativa(id) {
-  currentId = id;
-  new bootstrap.Modal(justifyModal).show();
-}
-
-function confirmarReprovacao() {
-  showSuccessToast(`Reprovado ID ${currentId}`);
-  bootstrap.Modal.getInstance(justifyModal).hide();
-}
-
-/************* MÍDIA *************/
-function verMidia(str) {
-  if (!str) return showErrorToast('Sem mídia');
-  const gallery = document.getElementById('gallery');
-  gallery.innerHTML = '';
-
-  str.split(',').forEach(url => {
-    gallery.innerHTML += `
-      <div class="col-md-4 mb-3">
-        <img src="${url}" class="img-fluid rounded">
-      </div>`;
-  });
-
-  new bootstrap.Modal(mediaModal).show();
 }
 
 /************* TOAST *************/
