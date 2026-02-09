@@ -9,6 +9,19 @@
 </head>
 <body>
 
+<!-- LOADING OVERLAY -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+  <div class="spinner-border text-primary" style="width:4rem;height:4rem"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="toastMsg" class="toast text-bg-success">
+    <div class="toast-body" id="toastText"></div>
+  </div>
+</div>
+
+  
 <!-- LOGIN -->
 <div id="loginPage" class="vh-100 d-flex align-items-center justify-content-center bg-gradient-primary">
   <div class="card p-4 shadow-lg" style="width:380px">
@@ -61,6 +74,7 @@
             <option>Baixa</option>
             <option>Média</option>
             <option>Alta</option>
+            <option>Crítica</option>
           </select>
           <input id="imagens" type="file" class="form-control mb-2" multiple accept="image/*">
           <input id="video" type="file" class="form-control" accept="video/*">
@@ -89,7 +103,32 @@
   </div>
 </div>
 
+<!-- MODAL DECISÃO JURÍDICO -->
+<div class="modal fade" id="decisaoModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5>Decisão Jurídica</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <textarea
+          id="justificativa"
+          class="form-control"
+          placeholder="Justificativa (obrigatória se reprovar)">
+        </textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" onclick="decidir('Aprovado')">Aprovar</button>
+        <button class="btn btn-danger" onclick="decidir('Reprovado')">Reprovar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
+
