@@ -26,10 +26,6 @@ body {
   border-radius: 14px;
 }
 
-img {
-  border-radius: 8px;
-}
-
 .loading-overlay {
   position: fixed;
   inset: 0;
@@ -40,10 +36,10 @@ img {
   z-index: 2000;
 }
 
-.priority-Crítica { background:#f8d7da }
-.priority-Alta { background:#fff3cd }
-.priority-Média { background:#e2e3e5 }
-.priority-Baixa { background:#d1e7dd }
+.priority-critica { background:#f8d7da }
+.priority-alta { background:#fff3cd }
+.priority-media { background:#e2e3e5 }
+.priority-baixa { background:#d1e7dd }
 
 .gallery-img {
   cursor: zoom-in;
