@@ -9,7 +9,7 @@ const USUARIOS = {
 let USUARIO = {};
 let SOLICITACAO_ATUAL = null;
 
-// ---------- UI helpers ----------
+// helpers
 function loading(on=true){
   loadingOverlay.classList.toggle("d-none", !on);
 }
@@ -19,14 +19,14 @@ function toast(msg){
   new bootstrap.Toast(toastMsg).show();
 }
 
-// ---------- LOGIN ----------
+// login
 loginForm.onsubmit = e=>{
   e.preventDefault();
   const u = loginInput.value.toLowerCase();
   const s = senhaInput.value;
 
-  if(!USUARIOS[u] || USUARIOS[u].senha!==s){
-    loginError.textContent="Login inválido";
+  if(!USUARIOS[u] || USUARIOS[u].senha !== s){
+    loginError.textContent = "Login inválido";
     loginError.classList.remove("d-none");
     return;
   }
@@ -37,17 +37,17 @@ loginForm.onsubmit = e=>{
   carregar();
 };
 
-// ---------- CARREGAR ----------
+// carregar dados
 async function carregar(){
   loading(true);
   const r = await fetch(API_URL);
-  let dados = await r.json();
+  const dados = await r.json();
 
-  const ordem = { "Crítica":1,"Alta":2,"Média":3,"Baixa":4 };
+  const ordem = { "Crítica":1, "Alta":2, "Média":3, "Baixa":4 };
 
   dados.sort((a,b)=>{
-    if(ordem[a.Prioridade]!==ordem[b.Prioridade])
-      return ordem[a.Prioridade]-ordem[b.Prioridade];
+    if(ordem[a.Prioridade] !== ordem[b.Prioridade])
+      return ordem[a.Prioridade] - ordem[b.Prioridade];
     return new Date(b["Data Criação"]) - new Date(a["Data Criação"]);
   });
 
@@ -55,83 +55,92 @@ async function carregar(){
     <tr><th>Descrição</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr>`;
 
   dados.forEach(d=>{
-    html+=`
-    <tr class="priority-${d.Prioridade}">
-      <td>${d.Descrição}</td>
-      <td>${d.Prioridade}</td>
-      <td>${d.Status}</td>
-      <td>
-        <button class="btn btn-sm btn-info" onclick="verMidias('${d.Pasta Drive||""}')">Mídias</button>
-        ${USUARIO.perfil==="jur" && d.Status==="Pendente"
-          ? `<button class="btn btn-sm btn-warning ms-1" onclick="abrirDecisao('${d.ID}')">Decidir</button>`
-          : ``}
-      </td>
-    </tr>`;
+    const classe = d.Prioridade
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"");
+
+    html += `
+      <tr class="priority-${classe}">
+        <td>${d.Descrição}</td>
+        <td>${d.Prioridade}</td>
+        <td>${d.Status}</td>
+        <td>
+          <button class="btn btn-sm btn-info"
+            onclick="verMidias('${d.Midias || ""}')">Mídias</button>
+          ${USUARIO.perfil==="jur" && d.Status==="Pendente"
+            ? `<button class="btn btn-sm btn-warning ms-1"
+                onclick="abrirDecisao('${d.ID}')">Decidir</button>`
+            : ``}
+        </td>
+      </tr>`;
   });
 
-  tableArea.innerHTML = html+"</table>";
+  tableArea.innerHTML = html + "</table>";
   loading(false);
 }
 
-// ---------- CRIAR ----------
+// criar
 createForm.onsubmit = async e=>{
   e.preventDefault();
   loading(true);
 
-  let midias=[];
+  let midias = [];
   for(let f of imagens.files) midias.push(await upload(f));
   if(video.files[0]) midias.push(await upload(video.files[0]));
 
   const fd = new FormData();
   fd.append("action","create");
-  fd.append("data",JSON.stringify({
-    descricao:descricao.value,
-    prioridade:prioridade.value,
-    nome:USUARIO.nome,
-    midias:midias.join(",")
+  fd.append("data", JSON.stringify({
+    descricao: descricao.value,
+    prioridade: prioridade.value,
+    nome: USUARIO.nome,
+    midias: midias.join(",")
   }));
 
-  await fetch(API_URL,{method:"POST",body:fd});
+  await fetch(API_URL,{ method:"POST", body:fd });
   bootstrap.Modal.getInstance(createModal).hide();
   createForm.reset();
   toast("Solicitação criada com sucesso");
   carregar();
 };
 
-// ---------- UPLOAD ----------
+// upload
 async function upload(file){
-  toast("Anexando mídia...");
-  const fd=new FormData();
-  fd.append("key",IMGBB_API_KEY);
-  fd.append("image",file);
-  const r=await fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd});
+  const fd = new FormData();
+  fd.append("key", IMGBB_API_KEY);
+  fd.append("image", file);
+  const r = await fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd});
   return (await r.json()).data.url;
 }
 
-// ---------- GALERIA ----------
+// midias
 function verMidias(str){
-  gallery.innerHTML="";
+  gallery.innerHTML = "";
   videoPlayer.classList.add("d-none");
+
+  if(!str) return;
 
   str.split(",").forEach(u=>{
     if(u.includes(".mp4")){
-      videoPlayer.src=u;
+      videoPlayer.src = u;
       videoPlayer.classList.remove("d-none");
-    }else{
-      gallery.innerHTML+=`
-      <div class="col-md-4">
-        <img src="${u}" class="img-fluid gallery-img" onclick="window.open('${u}','_blank')">
-      </div>`;
+    } else {
+      gallery.innerHTML += `
+        <div class="col-md-4">
+          <img src="${u}" class="img-fluid gallery-img"
+            onclick="window.open('${u}','_blank')">
+        </div>`;
     }
   });
 
   new bootstrap.Modal(mediaModal).show();
 }
 
-// ---------- JURÍDICO ----------
+// juridico
 function abrirDecisao(id){
-  SOLICITACAO_ATUAL=id;
-  justificativa.value="";
+  SOLICITACAO_ATUAL = id;
+  justificativa.value = "";
   new bootstrap.Modal(decisaoModal).show();
 }
 
@@ -143,13 +152,13 @@ async function decidir(status){
 
   loading(true);
 
-  const fd=new FormData();
+  const fd = new FormData();
   fd.append("action","update");
-  fd.append("data",JSON.stringify({
-    id:SOLICITACAO_ATUAL,
+  fd.append("data", JSON.stringify({
+    id: SOLICITACAO_ATUAL,
     status,
-    avaliadoPor:USUARIO.nome,
-    justificativa:justificativa.value
+    avaliadoPor: USUARIO.nome,
+    justificativa: justificativa.value
   }));
 
   await fetch(API_URL,{method:"POST",body:fd});
@@ -158,4 +167,6 @@ async function decidir(status){
   carregar();
 }
 
-function logout(){ location.reload(); }
+function logout(){
+  location.reload();
+}
