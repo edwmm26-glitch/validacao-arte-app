@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<!-- LOADING OVERLAY -->
+<!-- LOADING -->
 <div id="loadingOverlay" class="loading-overlay d-none">
   <div class="spinner-border text-primary" style="width:4rem;height:4rem"></div>
 </div>
@@ -21,7 +21,6 @@
   </div>
 </div>
 
-  
 <!-- LOGIN -->
 <div id="loginPage" class="vh-100 d-flex align-items-center justify-content-center bg-gradient-primary">
   <div class="card p-4 shadow-lg" style="width:380px">
@@ -41,8 +40,8 @@
     <nav class="sidebar bg-dark text-white p-3 vh-100 position-fixed">
       <h5 class="text-center mb-4">Menu</h5>
       <ul class="list-unstyled">
-        <li class="mb-3"><a class="nav-link text-white">Solicitações</a></li>
-        <li class="mb-3"><a onclick="logout()" class="nav-link text-danger">Sair</a></li>
+        <li class="mb-3"><span class="nav-link text-white">Solicitações</span></li>
+        <li class="mb-3"><span onclick="logout()" class="nav-link text-danger">Sair</span></li>
       </ul>
     </nav>
 
@@ -103,7 +102,7 @@
   </div>
 </div>
 
-<!-- MODAL DECISÃO JURÍDICO -->
+<!-- MODAL JURÍDICO -->
 <div class="modal fade" id="decisaoModal">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -112,11 +111,8 @@
         <button class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <textarea
-          id="justificativa"
-          class="form-control"
-          placeholder="Justificativa (obrigatória se reprovar)">
-        </textarea>
+        <textarea id="justificativa" class="form-control"
+          placeholder="Justificativa (obrigatória se reprovar)"></textarea>
       </div>
       <div class="modal-footer">
         <button class="btn btn-success" onclick="decidir('Aprovado')">Aprovar</button>
@@ -126,9 +122,7 @@
   </div>
 </div>
 
-  
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
-
