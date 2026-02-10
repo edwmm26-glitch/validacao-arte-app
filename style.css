@@ -29,3 +29,26 @@ body {
 img {
   border-radius: 8px;
 }
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.priority-Crítica { background:#f8d7da }
+.priority-Alta { background:#fff3cd }
+.priority-Média { background:#e2e3e5 }
+.priority-Baixa { background:#d1e7dd }
+
+.gallery-img {
+  cursor: zoom-in;
+  transition: .2s;
+}
+.gallery-img:hover {
+  transform: scale(1.03);
+}
